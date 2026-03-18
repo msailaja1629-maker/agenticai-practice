@@ -1,0 +1,57 @@
+!pip install google-generativeai --quiet
+from datetime import datetime
+import os
+import google.generativeai as genai
+
+# set up API key
+GOOGLE_API_KEY="AIzaSyAk"
+genai.configure(api_key=GOOGLE_API_KEY)
+
+# STEP 2 : setup gemini model
+model = genai.GenerativeModel("gemini-flash-latest")
+
+# Agent 1: Symptom agent
+def symptom_agent(input_text):
+  print("\n [Symptom Agent]")
+  response = model.generate_content(f"Classify the severity of this sympton and list possible conditions: {input_text}")
+  print(response.text)
+  return response.text
+
+# Agent 2: Scheduler agent
+def scheduler_agent(symptom_severity_summary):
+  print("\n [Scheduler agent]")
+  response = model.generate_content(f"based on this summary, suggest next steps for the patient: {symptom_severity_summary}")
+  print(response.text)
+  return response.text
+
+# Agent 3: Follow up agent
+def follow_up_agent():
+  print("\n [Follow up agent]")
+  response = model.generate_content("What follow up questions should dr. ask to understand ptient condition better?")
+  print(response.text)
+  return response.text
+
+# Agent 4: Logging agent
+def logger_agent(name, pid, input_text, output_text):
+  print("\n [Logger agent]")
+  log_entrty = f"\nTime: {datetime.now()}\nPatient: {name} (ID: {pid})\nInput: {input_text}\nAI Summary: {output_text}\n{'=' *50}\n"
+  with open("prescription_conversation.txt", "a") as f:
+    f.write(log_entrty)
+
+# Define user inputs
+name = input("Enter patients name: ")
+pid = input("Enter patiemnts id: ")
+user_input = input("Please describe your health symptoms: ")
+
+
+# Agent 1: Sympton understanding
+summary = symptom_agent(user_input)
+
+# Agent 2: Scheduler
+next_steps = scheduler_agent(summary)
+
+# Agent 3: Follow up
+followups = follow_up_agent()
+
+# Agent 4: Log the conversation
+logger_agent(name, pid, user_input, summary + "\n\n" + next_steps + "\n\n" + followups)
